@@ -29,12 +29,16 @@ GT ID: 900897987 (replace with your GT ID)
 
 import datetime as dt
 import random
-
 import pandas as pd
-import util as ut
+import matplotlib.pyplot as plt
 
 
-class StrategyLearner(object):
+import marketsimcode as msc
+from util import get_data
+
+
+
+class ManualStrategy(object):
     """
     A strategy learner that can learn a trading policy using the same indicators used in ManualStrategy.
 
@@ -63,7 +67,7 @@ class StrategyLearner(object):
             symbol="IBM",
             sd=dt.datetime(2008, 1, 1),
             ed=dt.datetime(2009, 1, 1),
-            sv=10000,
+            sv=100000,
     ):
         """
         Trains your strategy learner over a given time frame.
@@ -77,35 +81,15 @@ class StrategyLearner(object):
         :param sv: The starting value of the portfolio
         :type sv: int
         """
+        pass
 
-        # add your code to do learning here
-
-        # example usage of the old backward compatible util function
-        syms = [symbol]
-        dates = pd.date_range(sd, ed)
-        prices_all = ut.get_data(syms, dates)  # automatically adds SPY
-        prices = prices_all[syms]  # only portfolio symbols
-        prices_SPY = prices_all["SPY"]  # only SPY, for comparison later
-        if self.verbose:
-            print(prices)
-
-            # example use with new colname
-        volume_all = ut.get_data(
-            syms, dates, colname="Volume"
-        )  # automatically adds SPY
-        volume = volume_all[syms]  # only portfolio symbols
-        volume_SPY = volume_all["SPY"]  # only SPY, for comparison later
-        if self.verbose:
-            print(volume)
-
-            # this method should use the existing policy and test it against new data
 
     def testPolicy(
             self,
             symbol="IBM",
             sd=dt.datetime(2009, 1, 1),
             ed=dt.datetime(2010, 1, 1),
-            sv=10000,
+            sv=100000,
     ):
         """
         Tests your learner using data outside of the training data
@@ -124,29 +108,93 @@ class StrategyLearner(object):
             long so long as net holdings are constrained to -1000, 0, and 1000.
         :rtype: pandas.DataFrame
         """
-
-        # here we build a fake set of trades
-        # your code should return the same sort of data
+        # Get symbol prices
         dates = pd.date_range(sd, ed)
-        prices_all = ut.get_data([symbol],
-                                 dates)  # automatically adds SPY
-        trades = prices_all[[symbol, ]]  # only portfolio symbols
-        trades_SPY = prices_all["SPY"]  # only SPY, for comparison later
-        trades.values[:, :] = 0  # set them all to nothing
-        trades.values[0, :] = 1000  # add a BUY at the start
-        trades.values[40, :] = -1000  # add a SELL
-        trades.values[41, :] = 1000  # add a BUY
-        trades.values[60, :] = -2000  # go short from long
-        trades.values[61, :] = 2000  # go long from short
-        trades.values[-1, :] = -1000  # exit on the last day
-        if self.verbose:
-            print(type(trades))  # it better be a DataFrame!
-        if self.verbose:
-            print(trades)
-        if self.verbose:
-            print(prices_all)
-        return trades
+        prices = get_data([symbol], dates)
+        prices = prices[symbol]
+
+        # Clean data
+        prices.fillna(method="ffill", inplace=True)
+        prices.fillna(method="bfill", inplace=True)
+
+        # Calculate indicators (SMA, BBp, MACD)
+        # sma =
+        # bb =
+        # macd =
+
+
+        trades = pd.DataFrame(0, index=prices.index, columns=["Symbol", "Order", "Shares"])
+        trades.index.name = "Date"
+        position = 0
+
+        # Loops through trading days
+        for i in range(len(prices) - 1):
+            break
+
+
+    def benchmark(
+            self,
+            symbol="IBM",
+            sd=dt.datetime(2008, 1, 1),
+            ed=dt.datetime(2009, 12, 31),
+            sv=100000,
+    ):
+        dates = pd.date_range(sd, ed)
+        prices = get_data([symbol], dates)[symbol]
+
+        trades = pd.DataFrame(index=prices.index, columns=["Symbol", "Order", "Shares"])
+        trades.index.name = "Date"
+        trades.iloc[0] = [symbol, "BUY", 1000]
+        trades.dropna(inplace=True)
+
+        values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv)
+        values_normalized = values / values.iloc[0]
+
+        return values_normalized
+
+
+    def plot_benchmark(self, port_values_normalized=None, bm_values_normalized=None):
+        """Function to plot the TOS vs. benchmark."""
+        plt.figure(figsize=(10, 6))
+
+        # plt.plot(port_values_normalized.index, port_values_normalized, label="Theoretically Optimal Strategy",
+        #          color="red")
+        plt.plot(bm_values_normalized.index, bm_values_normalized, label="Benchmark", color="purple")
+
+        plt.title("Theoretically Optimal Strategy vs. Benchmark")
+        plt.xlabel("Dates")
+        plt.ylabel("Normalized Portfolio Value")
+        plt.legend(loc="best")
+        plt.grid(True)
+        plt.show()
+        # plt.savefig("./tos_vs_benchmark.png")
+
+
+    def author(self):
+        """
+        :return: The GT username of the student
+        :rtype: str
+        """
+        return "cvasquez36"
+
+
+    def study_group(self):
+        """
+        :return: A comma separated string of GT_Name of each member of your study group
+        :rtype: str
+        """
+        return "cvasquez36, ewu96, hwang759, kliu353, mma320, mmannerow3, steng31, qliang61"
 
 
 if __name__ == "__main__":
-    print("One does not simply think up a strategy")
+    manual = ManualStrategy()
+
+    sd = dt.datetime(2008, 1, 1)
+    ed = dt.datetime(2009, 12, 31)
+    sv = 100000
+    symbol = "JPM"
+
+    bm_values_normalized = manual.benchmark(symbol=symbol, sd=sd, ed=ed, sv=sv)
+
+    manual.plot_benchmark(bm_values_normalized=bm_values_normalized)
+
