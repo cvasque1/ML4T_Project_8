@@ -146,24 +146,26 @@ class ManualStrategy(object):
         # Indicator thresholds
         sma_threshold = 1.0
         sma_buffer = 0.05
+        sma_buy = sma_threshold - sma_buffer
+        sma_sell = sma_threshold + sma_buffer
 
 
         # Loops through trading days
         for i in range(1, len(prices)):
             ratio = price_sma_ratio_shifted.iloc[i]
 
-            if ratio < 1.0  and holdings == 0:
+            if ratio < sma_buy and holdings == 0:
                 trades.iloc[i] = [symbol, "BUY", 1000]
                 holdings = 1000
-            elif ratio > 1.0 and holdings == 0:
+            elif ratio < sma_buy  and holdings == -1000:
+                trades.iloc[i] = [symbol, "BUY", 2000]
+                holdings = 1000
+            elif ratio > sma_sell and holdings == 0:
                 trades.iloc[i] = [symbol, "SELL", 1000]
                 holdings = -1000
-            elif ratio < 1.0  and holdings == -1000:
-                trades.iloc[i] = [symbol, "BUY", 1000]
-                holdings = 0
-            elif ratio > 1.0 and holdings == 1000:
-                trades.iloc[i] = [symbol, "SELL", 1000]
-                holdings = 0
+            elif ratio > sma_sell and holdings == 1000:
+                trades.iloc[i] = [symbol, "SELL", 2000]
+                holdings = -1000
 
         trades.dropna(inplace=True)
         trades = trades[trades['Order'] != 0]
