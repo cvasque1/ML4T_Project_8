@@ -145,30 +145,30 @@ class ManualStrategy(object):
 
         # Indicator thresholds
         sma_threshold = 1.0
-        sma_buffer = 0.07
+        sma_buffer = 0.05
 
 
         # Loops through trading days
         for i in range(1, len(prices)):
             ratio = price_sma_ratio_shifted.iloc[i]
 
-            if ratio > sma_threshold + sma_buffer and holdings == 0:
+            if ratio < 1.0  and holdings == 0:
                 trades.iloc[i] = [symbol, "BUY", 1000]
                 holdings = 1000
-            elif ratio < sma_threshold - sma_buffer and holdings == 0:
+            elif ratio > 1.0 and holdings == 0:
                 trades.iloc[i] = [symbol, "SELL", 1000]
                 holdings = -1000
-            elif ratio > sma_threshold + sma_buffer and holdings == -1000:
+            elif ratio < 1.0  and holdings == -1000:
                 trades.iloc[i] = [symbol, "BUY", 1000]
                 holdings = 0
-            elif ratio < sma_threshold - sma_buffer and holdings == 1000:
+            elif ratio > 1.0 and holdings == 1000:
                 trades.iloc[i] = [symbol, "SELL", 1000]
                 holdings = 0
 
         trades.dropna(inplace=True)
         trades = trades[trades['Order'] != 0]
 
-        return trades
+        return trades, sma, price_sma_ratio
 
 
     def benchmark(
@@ -189,16 +189,18 @@ class ManualStrategy(object):
         values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv)
         values_normalized = values / values.iloc[0]
 
-        return values_normalized
+        return values_normalized, prices
 
 
-    def plot_benchmark(self, values_normalized=None, bm_values_normalized=None, trades=None):
+    def plot_benchmark(self, values_normalized=None, bm_values_normalized=None, trades=None, jpm=None, smad=None, psr=None):
         """Function to plot the TOS vs. benchmark."""
         plt.figure(figsize=(10, 6))
 
         plt.plot(values_normalized.index, values_normalized, label="Manual Strategy", color="red")
         plt.plot(bm_values_normalized.index, bm_values_normalized, label="Benchmark", color="purple")
-
+        # plt.plot(smad.index, smad / smad.iloc[0], label="SMA", color='orange')
+        # plt.plot(jpm.index, jpm / jpm.iloc[0], label="JPM", color='green' )
+        # plt.plot(psr.index, psr / psr.iloc[0], label="psr", color='purple')
         if trades is not None:
             long_entries = trades[(trades['Order'] == 'BUY')].index
             short_entries = trades[(trades['Order'] == 'SELL')].index
@@ -241,11 +243,11 @@ if __name__ == "__main__":
     sv = 100000
     symbol = "JPM"
 
-    trades = manual.testPolicy(symbol=symbol, sd=sd, ed=ed, sv=sv)
+    trades, sma, psr = manual.testPolicy(symbol=symbol, sd=sd, ed=ed, sv=sv)
     values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv)
     values_normalized = values / values.iloc[0]
 
-    bm_values_normalized = manual.benchmark(symbol=symbol, sd=sd, ed=ed, sv=sv)
+    bm_values_normalized, jpm = manual.benchmark(symbol=symbol, sd=sd, ed=ed, sv=sv)
 
-    manual.plot_benchmark(values_normalized=values_normalized, bm_values_normalized=bm_values_normalized, trades=trades)
+    manual.plot_benchmark(values_normalized=values_normalized, bm_values_normalized=bm_values_normalized, trades=trades, jpm=jpm, smad=sma, psr=psr)
 
