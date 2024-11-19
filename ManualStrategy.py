@@ -1,4 +1,6 @@
 """"""
+from turtledemo.forest import start
+
 """  		  	   		 	   		  		  		    	 		 		   		 		  
 Template for implementing StrategyLearner  (c) 2016 Tucker Balch  		  	   		 	   		  		  		    	 		 		   		 		  
 
@@ -34,6 +36,7 @@ import matplotlib.pyplot as plt
 
 
 import marketsimcode as msc
+import indicators as ind
 from util import get_data
 
 
@@ -108,28 +111,64 @@ class ManualStrategy(object):
             long so long as net holdings are constrained to -1000, 0, and 1000.
         :rtype: pandas.DataFrame
         """
-        # Get symbol prices
-        dates = pd.date_range(sd, ed)
-        prices = get_data([symbol], dates)
-        prices = prices[symbol]
+        # Include buffer days for window size to account for non-trading days
+        window_size = 20
+        buffer_days = window_size * 2
+        extended_sd = sd - pd.DateOffset(days=buffer_days)
 
-        # Clean data
-        prices.fillna(method="ffill", inplace=True)
-        prices.fillna(method="bfill", inplace=True)
+        # Get symbol prices
+        dates = pd.date_range(extended_sd, ed)
+        prices_extended = get_data([symbol], dates)[symbol]
 
         # Calculate indicators (SMA, BBp, MACD)
-        # sma =
+        sma = ind.calculate_SMA(prices_extended, 20)
         # bb =
         # macd =
+
+        # Filter data to original date range
+        prices = prices_extended.loc[sd:ed]
+        sma = sma.loc[sd:ed]
+
+        price_sma_ratio = prices / sma
+
+        # Shift data by one day- use yesterday's value for today's decisions
+        price_sma_ratio_shifted = price_sma_ratio.shift(1)
+
+        # # Clean data
+        # prices.fillna(method="ffill", inplace=True)
+        # prices.fillna(method="bfill", inplace=True)
 
 
         trades = pd.DataFrame(0, index=prices.index, columns=["Symbol", "Order", "Shares"])
         trades.index.name = "Date"
-        position = 0
+        holdings = 0
+
+        # Indicator thresholds
+        sma_threshold = 1.0
+        sma_buffer = 0.07
+
 
         # Loops through trading days
-        for i in range(len(prices) - 1):
-            break
+        for i in range(1, len(prices)):
+            ratio = price_sma_ratio_shifted.iloc[i]
+
+            if ratio > sma_threshold + sma_buffer and holdings == 0:
+                trades.iloc[i] = [symbol, "BUY", 1000]
+                holdings = 1000
+            elif ratio < sma_threshold - sma_buffer and holdings == 0:
+                trades.iloc[i] = [symbol, "SELL", 1000]
+                holdings = -1000
+            elif ratio > sma_threshold + sma_buffer and holdings == -1000:
+                trades.iloc[i] = [symbol, "BUY", 1000]
+                holdings = 0
+            elif ratio < sma_threshold - sma_buffer and holdings == 1000:
+                trades.iloc[i] = [symbol, "SELL", 1000]
+                holdings = 0
+
+        trades.dropna(inplace=True)
+        trades = trades[trades['Order'] != 0]
+
+        return trades
 
 
     def benchmark(
@@ -153,13 +192,21 @@ class ManualStrategy(object):
         return values_normalized
 
 
-    def plot_benchmark(self, port_values_normalized=None, bm_values_normalized=None):
+    def plot_benchmark(self, values_normalized=None, bm_values_normalized=None, trades=None):
         """Function to plot the TOS vs. benchmark."""
         plt.figure(figsize=(10, 6))
 
-        # plt.plot(port_values_normalized.index, port_values_normalized, label="Theoretically Optimal Strategy",
-        #          color="red")
+        plt.plot(values_normalized.index, values_normalized, label="Manual Strategy", color="red")
         plt.plot(bm_values_normalized.index, bm_values_normalized, label="Benchmark", color="purple")
+
+        if trades is not None:
+            long_entries = trades[(trades['Order'] == 'BUY')].index
+            short_entries = trades[(trades['Order'] == 'SELL')].index
+
+            for i, date in enumerate(long_entries):
+                plt.axvline(x=date, color='blue', linewidth=0.75, label='LONG Entry' if i == 0 else "")
+            for i, date in enumerate(short_entries):
+                plt.axvline(x=date, color='black', linewidth=0.75, label='SHORT Entry' if i == 0 else "")
 
         plt.title("Theoretically Optimal Strategy vs. Benchmark")
         plt.xlabel("Dates")
@@ -194,7 +241,11 @@ if __name__ == "__main__":
     sv = 100000
     symbol = "JPM"
 
+    trades = manual.testPolicy(symbol=symbol, sd=sd, ed=ed, sv=sv)
+    values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv)
+    values_normalized = values / values.iloc[0]
+
     bm_values_normalized = manual.benchmark(symbol=symbol, sd=sd, ed=ed, sv=sv)
 
-    manual.plot_benchmark(bm_values_normalized=bm_values_normalized)
+    manual.plot_benchmark(values_normalized=values_normalized, bm_values_normalized=bm_values_normalized, trades=trades)
 
