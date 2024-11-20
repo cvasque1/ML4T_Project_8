@@ -1,6 +1,8 @@
 """"""
 from turtledemo.forest import start
 
+from matplotlib.lines import lineStyles
+
 """  		  	   		 	   		  		  		    	 		 		   		 		  
 Template for implementing StrategyLearner  (c) 2016 Tucker Balch  		  	   		 	   		  		  		    	 		 		   		 		  
 
@@ -121,18 +123,20 @@ class ManualStrategy(object):
         prices_extended = get_data([symbol], dates)[symbol]
 
         # Calculate indicators (SMA, BBp, MACD)
-        sma = ind.calculate_SMA(prices_extended, 20)
-        # bb =
+        sma = ind.calculate_SMA(prices_extended, window_size)
+        bbp = ind.calculate_bollinger_bands_percent(prices_extended, sma, window_size)
         # macd =
 
         # Filter data to original date range
         prices = prices_extended.loc[sd:ed]
         sma = sma.loc[sd:ed]
+        bbp = bbp.loc[sd:ed]
 
         price_sma_ratio = prices / sma
 
         # Shift data by one day- use yesterday's value for today's decisions
         price_sma_ratio_shifted = price_sma_ratio.shift(1)
+        bbp_shifted = bbp.shift(1)
 
         # # Clean data
         # prices.fillna(method="ffill", inplace=True)
@@ -144,26 +148,30 @@ class ManualStrategy(object):
         holdings = 0
 
         # Indicator thresholds
-        sma_threshold = 1.0
         sma_buffer = 0.05
-        sma_buy = sma_threshold - sma_buffer
-        sma_sell = sma_threshold + sma_buffer
+        sma_buy = 1.0 - sma_buffer
+        sma_sell = 1.0 + sma_buffer
+
+        bbp_buffer = 0.2
+        bbp_buy = 0.0 + bbp_buffer
+        bbp_sell = 1.0 - bbp_buffer
 
 
         # Loops through trading days
         for i in range(1, len(prices)):
-            ratio = price_sma_ratio_shifted.iloc[i]
+            sma_signal = price_sma_ratio_shifted.iloc[i]
+            bbp_signal = bbp_shifted.iloc[i]
 
-            if ratio < sma_buy and holdings == 0:
+            if sma_signal < sma_buy and bbp_signal < bbp_buy and holdings == 0:
                 trades.iloc[i] = [symbol, "BUY", 1000]
                 holdings = 1000
-            elif ratio < sma_buy  and holdings == -1000:
+            elif sma_signal < sma_buy and bbp_signal < bbp_buy and holdings == -1000:
                 trades.iloc[i] = [symbol, "BUY", 2000]
                 holdings = 1000
-            elif ratio > sma_sell and holdings == 0:
+            elif sma_signal > sma_sell and bbp_signal > bbp_sell and holdings == 0:
                 trades.iloc[i] = [symbol, "SELL", 1000]
                 holdings = -1000
-            elif ratio > sma_sell and holdings == 1000:
+            elif sma_signal > sma_sell and bbp_signal > bbp_sell and holdings == 1000:
                 trades.iloc[i] = [symbol, "SELL", 2000]
                 holdings = -1000
 
@@ -216,7 +224,7 @@ class ManualStrategy(object):
         plt.xlabel("Dates")
         plt.ylabel("Normalized Portfolio Value")
         plt.legend(loc="best")
-        plt.grid(True)
+        plt.grid(True, linestyle='--')
         plt.show()
         # plt.savefig("./tos_vs_benchmark.png")
 
