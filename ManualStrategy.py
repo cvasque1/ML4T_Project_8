@@ -125,27 +125,20 @@ class ManualStrategy(object):
         # Calculate indicators (SMA, BBp, MACD)
         sma = ind.calculate_SMA(prices_extended, window_size)
         bbp = ind.calculate_bollinger_bands_percent(prices_extended, sma, window_size)
-        # macd =
+        macd = ind.calculate_MACD(prices_extended)
 
         # Filter data to original date range
         prices = prices_extended.loc[sd:ed]
         sma = sma.loc[sd:ed]
         bbp = bbp.loc[sd:ed]
+        macd = macd.loc[sd:ed]
 
         price_sma_ratio = prices / sma
 
         # Shift data by one day- use yesterday's value for today's decisions
         price_sma_ratio_shifted = price_sma_ratio.shift(1)
         bbp_shifted = bbp.shift(1)
-
-        # # Clean data
-        # prices.fillna(method="ffill", inplace=True)
-        # prices.fillna(method="bfill", inplace=True)
-
-
-        trades = pd.DataFrame(0, index=prices.index, columns=["Symbol", "Order", "Shares"])
-        trades.index.name = "Date"
-        holdings = 0
+        macd_shifted = macd.shift(1)
 
         # Indicator thresholds
         sma_buffer = 0.05
@@ -156,24 +149,55 @@ class ManualStrategy(object):
         bbp_buy = 0.0 + bbp_buffer
         bbp_sell = 1.0 - bbp_buffer
 
+        # # Clean data
+        # prices.fillna(method="ffill", inplace=True)
+        # prices.fillna(method="bfill", inplace=True)
+
+        trades = pd.DataFrame(0, index=prices.index, columns=["Symbol", "Order", "Shares"])
+        trades.index.name = "Date"
+        holdings = 0
 
         # Loops through trading days
         for i in range(1, len(prices)):
             sma_signal = price_sma_ratio_shifted.iloc[i]
             bbp_signal = bbp_shifted.iloc[i]
+            macd_signal = macd_shifted.iloc[i]
 
-            if sma_signal < sma_buy and bbp_signal < bbp_buy and holdings == 0:
+            sma_b = sma_signal < sma_buy
+            sma_s = sma_signal > sma_sell
+            bbp_b = bbp_signal < bbp_buy
+            bbp_s = bbp_signal > bbp_sell
+            macd_b = macd_signal > 0
+            macd_s = macd_signal < 0
+
+            buy_signal = (sma_b and bbp_b) or (sma_b and macd_b) or (bbp_b and macd_b)
+            sell_signal = (sma_s and bbp_s) or (sma_s and macd_s) or (bbp_s and macd_s)
+
+            if buy_signal and holdings == 0:
                 trades.iloc[i] = [symbol, "BUY", 1000]
                 holdings = 1000
-            elif sma_signal < sma_buy and bbp_signal < bbp_buy and holdings == -1000:
+            elif buy_signal and holdings == -1000:
                 trades.iloc[i] = [symbol, "BUY", 2000]
                 holdings = 1000
-            elif sma_signal > sma_sell and bbp_signal > bbp_sell and holdings == 0:
+            elif sell_signal and holdings == 0:
                 trades.iloc[i] = [symbol, "SELL", 1000]
                 holdings = -1000
-            elif sma_signal > sma_sell and bbp_signal > bbp_sell and holdings == 1000:
+            elif sell_signal and holdings == 1000:
                 trades.iloc[i] = [symbol, "SELL", 2000]
                 holdings = -1000
+
+            # if sma_signal < sma_buy and bbp_signal < bbp_buy and macd_signal > 0 and holdings == 0:
+            #     trades.iloc[i] = [symbol, "BUY", 1000]
+            #     holdings = 1000
+            # elif sma_signal < sma_buy and bbp_signal < bbp_buy and macd_signal > 0 and holdings == -1000:
+            #     trades.iloc[i] = [symbol, "BUY", 2000]
+            #     holdings = 1000
+            # elif sma_signal > sma_sell and bbp_signal > bbp_sell and macd_signal < 0 and holdings == 0:
+            #     trades.iloc[i] = [symbol, "SELL", 1000]
+            #     holdings = -1000
+            # elif sma_signal > sma_sell and bbp_signal > bbp_sell and macd_signal < 0 and holdings == 1000:
+            #     trades.iloc[i] = [symbol, "SELL", 2000]
+            #     holdings = -1000
 
         trades.dropna(inplace=True)
         trades = trades[trades['Order'] != 0]
@@ -220,7 +244,7 @@ class ManualStrategy(object):
             for i, date in enumerate(short_entries):
                 plt.axvline(x=date, color='black', linewidth=0.75, label='SHORT Entry' if i == 0 else "")
 
-        plt.title("Theoretically Optimal Strategy vs. Benchmark")
+        plt.title("Manual Strategy vs. Benchmark")
         plt.xlabel("Dates")
         plt.ylabel("Normalized Portfolio Value")
         plt.legend(loc="best")
@@ -250,6 +274,8 @@ if __name__ == "__main__":
 
     sd = dt.datetime(2008, 1, 1)
     ed = dt.datetime(2009, 12, 31)
+    # sd = dt.datetime(2010, 1, 1)
+    # ed = dt.datetime(2011, 12, 31)
     sv = 100000
     symbol = "JPM"
 
