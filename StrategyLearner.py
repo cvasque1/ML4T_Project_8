@@ -28,10 +28,12 @@ GT ID: 900897987 (replace with your GT ID)
 """  		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
 import datetime as dt  		  	   		 	   		  		  		    	 		 		   		 		  
-import random  		  	   		 	   		  		  		    	 		 		   		 		  
-  		  	   		 	   		  		  		    	 		 		   		 		  
-import pandas as pd  		  	   		 	   		  		  		    	 		 		   		 		  
-import util as ut  		  	   		 	   		  		  		    	 		 		   		 		  
+import random
+import pandas as pd
+
+import indicators as ind
+import util as ut
+
   		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
 class StrategyLearner(object):  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -74,27 +76,64 @@ class StrategyLearner(object):
         :type ed: datetime  		  	   		 	   		  		  		    	 		 		   		 		  
         :param sv: The starting value of the portfolio  		  	   		 	   		  		  		    	 		 		   		 		  
         :type sv: int  		  	   		 	   		  		  		    	 		 		   		 		  
-        """  		  	   		 	   		  		  		    	 		 		   		 		  
+        """
+        # Include buffer days for window size to account for non-trading days
+        window_size = 20
+        buffer_days = window_size * 2
+        extended_sd = sd - pd.DateOffset(days=buffer_days)
+
+        # Get symbol prices
+        dates = pd.date_range(extended_sd, ed)
+        prices_extended = ut.get_data([symbol], dates)[symbol]
+
+        # Calculate indicators (SMA, BBp, MACD)
+        sma = ind.calculate_SMA(prices_extended, window_size)
+        bbp = ind.calculate_bollinger_bands_percent(prices_extended, sma, window_size)
+        momentum = ind.calculate_momentum(prices_extended, window_size)
+
+        # Filter data to original date range
+        prices = prices_extended.loc[sd:ed]
+        sma = sma.loc[sd:ed]
+        bbp = bbp.loc[sd:ed]
+        momentum = momentum.loc[sd:ed]
+
+        price_sma_ratio = prices / sma
+
+        N = 5
+        Y_BUY = 0.02
+        Y_SELL = -.02
+
+        future_returns = (prices.shift(-N) / prices) - 1.0
+        Y = pd.DataFrame(0, index=future_returns.index, columns=['Y_VALUE'])
+
+        for i in range(len(future_returns)-N):
+            if future_returns[i] > Y_BUY:
+                Y['Y_VALUE'][i] = 1
+            elif future_returns[i] < Y_SELL:
+                Y['Y_VALUE'][i] = -1
+            else:
+                Y['Y_VALUE'][i] = 0
+        pd.set_option('display.max_rows', None)
+        print(future_returns)
+        print(Y)
+
+
+
+        data = pd.DataFrame({
+            'Price/SMA': price_sma_ratio,
+            'BBP': bbp,
+            'Momemtum': momentum,
+            'Returns': future_returns,
+            'Y_VALUE': Y['Y_VALUE']
+
+        })
+        print(data)
+
+        data.dropna(inplace=True)
+
+
   		  	   		 	   		  		  		    	 		 		   		 		  
-        # add your code to do learning here  		  	   		 	   		  		  		    	 		 		   		 		  
-  		  	   		 	   		  		  		    	 		 		   		 		  
-        # example usage of the old backward compatible util function  		  	   		 	   		  		  		    	 		 		   		 		  
-        syms = [symbol]  		  	   		 	   		  		  		    	 		 		   		 		  
-        dates = pd.date_range(sd, ed)  		  	   		 	   		  		  		    	 		 		   		 		  
-        prices_all = ut.get_data(syms, dates)  # automatically adds SPY  		  	   		 	   		  		  		    	 		 		   		 		  
-        prices = prices_all[syms]  # only portfolio symbols  		  	   		 	   		  		  		    	 		 		   		 		  
-        prices_SPY = prices_all["SPY"]  # only SPY, for comparison later  		  	   		 	   		  		  		    	 		 		   		 		  
-        if self.verbose:  		  	   		 	   		  		  		    	 		 		   		 		  
-            print(prices)  		  	   		 	   		  		  		    	 		 		   		 		  
-  		  	   		 	   		  		  		    	 		 		   		 		  
-        # example use with new colname  		  	   		 	   		  		  		    	 		 		   		 		  
-        volume_all = ut.get_data(  		  	   		 	   		  		  		    	 		 		   		 		  
-            syms, dates, colname="Volume"  		  	   		 	   		  		  		    	 		 		   		 		  
-        )  # automatically adds SPY  		  	   		 	   		  		  		    	 		 		   		 		  
-        volume = volume_all[syms]  # only portfolio symbols  		  	   		 	   		  		  		    	 		 		   		 		  
-        volume_SPY = volume_all["SPY"]  # only SPY, for comparison later  		  	   		 	   		  		  		    	 		 		   		 		  
-        if self.verbose:  		  	   		 	   		  		  		    	 		 		   		 		  
-            print(volume)  		  	   		 	   		  		  		    	 		 		   		 		  
+
   		  	   		 	   		  		  		    	 		 		   		 		  
     # this method should use the existing policy and test it against new data  		  	   		 	   		  		  		    	 		 		   		 		  
     def testPolicy(  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -144,5 +183,14 @@ class StrategyLearner(object):
         return trades  		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
-if __name__ == "__main__":  		  	   		 	   		  		  		    	 		 		   		 		  
-    print("One does not simply think up a strategy")  		  	   		 	   		  		  		    	 		 		   		 		  
+if __name__ == "__main__":
+    learner = StrategyLearner()
+
+    sd = dt.datetime(2008, 1, 1)
+    ed = dt.datetime(2009, 12, 31)
+    # sd = dt.datetime(2010, 1, 1)
+    # ed = dt.datetime(2011, 12, 31)
+    sv = 100000
+    symbol = "JPM"
+
+    learner.add_evidence(symbol=symbol, sd=sd, ed=ed, sv=sv)

@@ -239,7 +239,7 @@ class ManualStrategy(object):
         plt.ylabel("Normalized Portfolio Value")
         plt.legend(loc="best")
         plt.grid(True, linestyle='--')
-        plt.show()
+        # plt.show()
         # plt.savefig("./tos_vs_benchmark.png")
 
 
@@ -262,18 +262,27 @@ class ManualStrategy(object):
 if __name__ == "__main__":
     manual = ManualStrategy()
 
-    # sd = dt.datetime(2008, 1, 1)
-    # ed = dt.datetime(2009, 12, 31)
-    sd = dt.datetime(2010, 1, 1)
-    ed = dt.datetime(2011, 12, 31)
+    sd = dt.datetime(2008, 1, 1)
+    ed = dt.datetime(2009, 12, 31)
+    # sd = dt.datetime(2010, 1, 1)
+    # ed = dt.datetime(2011, 12, 31)
     sv = 100000
     symbol = "JPM"
 
     trades = manual.testPolicy(symbol=symbol, sd=sd, ed=ed, sv=sv)
-    values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv, commission=9.95, impact=0.005)
+    values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv)
     values_normalized = values / values.iloc[0]
 
     bm_values_normalized, jpm = manual.benchmark(symbol=symbol, sd=sd, ed=ed, sv=sv)
 
     manual.plot_benchmark(values_normalized=values_normalized, bm_values_normalized=bm_values_normalized, trades=trades)
 
+    # Calculate performance metrics for both TOS and Benchmark
+    cum_ret_tos, avg_daily_ret_tos, std_daily_ret_tos, sharpe_ratio_tos = msc.compute_portfolio_stats(values_normalized)
+    cum_ret_bm, avg_daily_ret_bm, std_daily_ret_bm, sharpe_ratio_bm = msc.compute_portfolio_stats(bm_values_normalized)
+
+    print(f"{'Metric':<25}{'Benchmark':<15}{'Manual Strategy':<15}")
+    print(f"{'-' * 50}")
+    print(f"{'Cumulative Return':<25}{cum_ret_bm[0]:<15.6f}{cum_ret_tos[0]:<15.6f}")
+    print(f"{'Standard Deviation':<25}{std_daily_ret_bm[0]:<15.6f}{std_daily_ret_tos[0]:<15.6f}")
+    print(f"{'Mean of Daily Returns':<25}{avg_daily_ret_bm[0]:<15.6f}{avg_daily_ret_tos[0]:<15.6f}")
