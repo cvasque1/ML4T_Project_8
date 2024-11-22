@@ -30,8 +30,10 @@ GT ID: 900897987 (replace with your GT ID)
 import datetime as dt  		  	   		 	   		  		  		    	 		 		   		 		  
 import random
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import util as ut
+import marketsimcode as msc
 import indicators as ind
 import BagLearner as bl
 import RTLearner as rt
@@ -106,8 +108,8 @@ class StrategyLearner(object):
         Y_SELL = -.02
 
         future_returns = (prices.shift(-N) / prices) - 1.0
-        Y = pd.DataFrame(0, index=future_returns.index, columns=['Y_VALUE'])
 
+        Y = pd.DataFrame(0, index=future_returns.index, columns=['Y_VALUE'])
         for i in range(len(future_returns)-N):
             if future_returns[i] > Y_BUY:
                 Y['Y_VALUE'][i] = 1
@@ -125,10 +127,6 @@ class StrategyLearner(object):
 
         # print(Y['Y_VALUE'])
         self.learner.add_evidence(x.values, Y['Y_VALUE'])
-
-        # Evaluate in-sample performance
-        pred_y = self.learner.query(x.values)
-        print(pred_y)
 
   		  	   		 	   		  		  		    	 		 		   		 		  
     # this method should use the existing policy and test it against new data  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -155,28 +153,108 @@ class StrategyLearner(object):
             Values of +2000 and -2000 for trades are also legal when switching from long to short or short to  		  	   		 	   		  		  		    	 		 		   		 		  
             long so long as net holdings are constrained to -1000, 0, and 1000.  		  	   		 	   		  		  		    	 		 		   		 		  
         :rtype: pandas.DataFrame  		  	   		 	   		  		  		    	 		 		   		 		  
-        """  		  	   		 	   		  		  		    	 		 		   		 		  
-  		  	   		 	   		  		  		    	 		 		   		 		  
-        # here we build a fake set of trades  		  	   		 	   		  		  		    	 		 		   		 		  
-        # your code should return the same sort of data  		  	   		 	   		  		  		    	 		 		   		 		  
-        dates = pd.date_range(sd, ed)  		  	   		 	   		  		  		    	 		 		   		 		  
-        prices_all = ut.get_data([symbol], dates)  # automatically adds SPY  		  	   		 	   		  		  		    	 		 		   		 		  
-        trades = prices_all[[symbol,]]  # only portfolio symbols  		  	   		 	   		  		  		    	 		 		   		 		  
-        trades_SPY = prices_all["SPY"]  # only SPY, for comparison later  		  	   		 	   		  		  		    	 		 		   		 		  
-        trades.values[:, :] = 0  # set them all to nothing  		  	   		 	   		  		  		    	 		 		   		 		  
-        trades.values[0, :] = 1000  # add a BUY at the start  		  	   		 	   		  		  		    	 		 		   		 		  
-        trades.values[40, :] = -1000  # add a SELL  		  	   		 	   		  		  		    	 		 		   		 		  
-        trades.values[41, :] = 1000  # add a BUY  		  	   		 	   		  		  		    	 		 		   		 		  
-        trades.values[60, :] = -2000  # go short from long  		  	   		 	   		  		  		    	 		 		   		 		  
-        trades.values[61, :] = 2000  # go long from short  		  	   		 	   		  		  		    	 		 		   		 		  
-        trades.values[-1, :] = -1000  # exit on the last day  		  	   		 	   		  		  		    	 		 		   		 		  
-        if self.verbose:  		  	   		 	   		  		  		    	 		 		   		 		  
-            print(type(trades))  # it better be a DataFrame!  		  	   		 	   		  		  		    	 		 		   		 		  
-        if self.verbose:  		  	   		 	   		  		  		    	 		 		   		 		  
-            print(trades)  		  	   		 	   		  		  		    	 		 		   		 		  
-        if self.verbose:  		  	   		 	   		  		  		    	 		 		   		 		  
-            print(prices_all)  		  	   		 	   		  		  		    	 		 		   		 		  
-        return trades  		  	   		 	   		  		  		    	 		 		   		 		  
+        """
+        window_size = 20
+        buffer_days = window_size * 2
+        extended_sd = sd - pd.DateOffset(days=buffer_days)
+
+        # Get symbol prices
+        dates = pd.date_range(extended_sd, ed)
+        prices_extended = ut.get_data([symbol], dates)[symbol]
+
+        # Calculate indicators (SMA, BBp, MACD)
+        sma = ind.calculate_SMA(prices_extended, window_size)
+        bbp = ind.calculate_bollinger_bands_percent(prices_extended, sma, window_size)
+        momentum = ind.calculate_momentum(prices_extended, window_size)
+
+        # Filter data to original date range
+        prices = prices_extended.loc[sd:ed]
+        sma = sma.loc[sd:ed]
+        bbp = bbp.loc[sd:ed]
+        momentum = momentum.loc[sd:ed]
+
+        price_sma_ratio = prices / sma
+
+        x = pd.DataFrame({
+            'Price/SMA': price_sma_ratio,
+            'BBP': bbp,
+            'Momemtum': momentum,
+        })
+
+        pred_y = self.learner.query(x.values)
+
+        trades = pd.DataFrame(0, index=prices.index, columns=["Symbol", "Order", "Shares", "Reason"])
+        trades.index.name = "Date"
+        holdings = 0
+
+        for i in range(len(pred_y)):
+            prediction = pred_y[i]
+
+            if prediction > 0 and holdings == 0:
+                trades.iloc[i] = [symbol, "BUY", 1000, "LONG"]
+                holdings = 1000
+            elif prediction > 0 and holdings == -1000:
+                trades.iloc[i] = [symbol, "BUY", 2000, "LONG"]
+                holdings = 1000
+            elif prediction < 0 and holdings == 0:
+                trades.iloc[i] = [symbol, "SELL", 1000, "SHORT"]
+                holdings = -1000
+            elif prediction < 0 and holdings == 1000:
+                trades.iloc[i] = [symbol, "SELL", 2000, "SHORT"]
+                holdings = -1000
+
+        trades.dropna(inplace=True)
+        trades = trades[trades['Order'] != 0]
+        # print(trades)
+        return trades
+
+
+    def benchmark(
+            self,
+            symbol="IBM",
+            sd=dt.datetime(2008, 1, 1),
+            ed=dt.datetime(2009, 12, 31),
+            sv=100000,
+    ):
+        print(symbol)
+        dates = pd.date_range(sd, ed)
+        prices = ut.get_data([symbol], dates)[symbol]
+
+        trades = pd.DataFrame(index=prices.index, columns=["Symbol", "Order", "Shares"])
+        trades.index.name = "Date"
+        trades.iloc[0] = [symbol, "BUY", 1000]
+        trades.dropna(inplace=True)
+
+        values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv, commission=9.95, impact=0.005)
+        values_normalized = values / values.iloc[0]
+
+        return values_normalized, prices
+
+
+    def plot_benchmark(self, values_normalized=None, bm_values_normalized=None, trades=None):
+        """Function to plot the TOS vs. benchmark."""
+        plt.figure(figsize=(12, 6))
+
+        plt.plot(values_normalized.index, values_normalized, label="Strategy Learner", color="red")
+        plt.plot(bm_values_normalized.index, bm_values_normalized, label="Benchmark", color="purple")
+
+        if trades is not None:
+            long_entries = trades[(trades['Reason'] == 'LONG')].index
+            short_entries = trades[(trades['Reason'] == 'SHORT')].index
+
+            for i, date in enumerate(long_entries):
+                plt.axvline(x=date, color='blue', linewidth=0.75, label='LONG Entry' if i == 0 else "")
+            for i, date in enumerate(short_entries):
+                plt.axvline(x=date, color='black', linewidth=0.75, label='SHORT Entry' if i == 0 else "")
+
+
+        plt.title("Strategy Learner vs. Benchmark (Out Sample)")
+        plt.xlabel("Dates")
+        plt.ylabel("Normalized Portfolio Value")
+        plt.legend(loc="best")
+        plt.grid(True, linestyle='--')
+        plt.show()
+        # plt.savefig("./tos_vs_benchmark.png")
   		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
 if __name__ == "__main__":
@@ -190,3 +268,15 @@ if __name__ == "__main__":
     symbol = "JPM"
 
     learner.add_evidence(symbol=symbol, sd=sd, ed=ed, sv=sv)
+
+    # sd = dt.datetime(2010, 1, 1)
+    # ed = dt.datetime(2011, 12, 31)
+    trades = learner.testPolicy(symbol=symbol, sd=sd, ed=ed, sv=sv)
+    values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv)
+    values_normalized = values / values.iloc[0]
+
+    bm_values_normalized, jpm = learner.benchmark(symbol=symbol, sd=sd, ed=ed, sv=sv)
+
+    learner.plot_benchmark(values_normalized=values_normalized, bm_values_normalized=bm_values_normalized, trades=trades)
+
+# print(trades)
