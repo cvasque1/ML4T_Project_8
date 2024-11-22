@@ -31,8 +31,10 @@ import datetime as dt
 import random
 import pandas as pd
 
-import indicators as ind
 import util as ut
+import indicators as ind
+import BagLearner as bl
+import RTLearner as rt
 
   		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
@@ -55,9 +57,9 @@ class StrategyLearner(object):
         """  		  	   		 	   		  		  		    	 		 		   		 		  
         self.verbose = verbose  		  	   		 	   		  		  		    	 		 		   		 		  
         self.impact = impact  		  	   		 	   		  		  		    	 		 		   		 		  
-        self.commission = commission  		  	   		 	   		  		  		    	 		 		   		 		  
-  		  	   		 	   		  		  		    	 		 		   		 		  
-    # this method should create a QLearner, and train it for trading  		  	   		 	   		  		  		    	 		 		   		 		  
+        self.commission = commission
+        self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": 5}, bags=20)
+
     def add_evidence(  		  	   		 	   		  		  		    	 		 		   		 		  
         self,  		  	   		 	   		  		  		    	 		 		   		 		  
         symbol="IBM",  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -113,26 +115,20 @@ class StrategyLearner(object):
                 Y['Y_VALUE'][i] = -1
             else:
                 Y['Y_VALUE'][i] = 0
-        pd.set_option('display.max_rows', None)
-        print(future_returns)
-        print(Y)
+        # pd.set_option('display.max_rows', None)
 
-
-
-        data = pd.DataFrame({
+        x = pd.DataFrame({
             'Price/SMA': price_sma_ratio,
             'BBP': bbp,
             'Momemtum': momentum,
-            'Returns': future_returns,
-            'Y_VALUE': Y['Y_VALUE']
-
         })
-        print(data)
 
-        data.dropna(inplace=True)
+        # print(Y['Y_VALUE'])
+        self.learner.add_evidence(x.values, Y['Y_VALUE'])
 
-
-  		  	   		 	   		  		  		    	 		 		   		 		  
+        # Evaluate in-sample performance
+        pred_y = self.learner.query(x.values)
+        print(pred_y)
 
   		  	   		 	   		  		  		    	 		 		   		 		  
     # this method should use the existing policy and test it against new data  		  	   		 	   		  		  		    	 		 		   		 		  

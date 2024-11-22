@@ -24,6 +24,7 @@ GT honor code violation.
 """
 
 import numpy as np
+from scipy.stats import mode
 
 class RTLearner(object):
     """
@@ -91,7 +92,7 @@ class RTLearner(object):
         """
         # Base cases: data rows <= leafs size or all y-values are the same
         if data_x.shape[0] <= self.leaf_size or np.all(data_y == data_y[0]):
-            return np.array([[-1, np.mean(data_y), np.nan, np.nan]])
+            return np.array([[-1, mode(data_y).mode[0], np.nan, np.nan]])
 
         split_factor = self.determine_best_factor_split(data_x)
         split_val = np.median(data_x[:, split_factor])
@@ -102,7 +103,7 @@ class RTLearner(object):
 
         # If all split data is on one side of the split, return a leaf
         if np.all(left_tree_data_mask == False) or np.all(right_tree_data_mask == False):
-            return np.array([[-1, np.mean(data_y), np.nan, np.nan]])
+            return np.array([[-1, mode(data_y).mode[0], np.nan, np.nan]])
 
         # Build left and right subtrees
         left_tree = self.build_tree(data_x[left_tree_data_mask], data_y[left_tree_data_mask])

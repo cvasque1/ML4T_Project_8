@@ -24,6 +24,7 @@ GT honor code violation.
 """
 
 import numpy as np
+from scipy.stats import mode
 
 
 class BagLearner(object):
@@ -107,7 +108,8 @@ class BagLearner(object):
         :rtype: numpy.ndarray
         """
         predictions = np.array([learner.query(points) for learner in self.learners])
-        return np.mean(predictions, axis=0)
+        return mode(predictions, axis=0).mode[0]
+        # return np.mean(predictions, axis=0)
 
 
 if __name__ == "__main__":
