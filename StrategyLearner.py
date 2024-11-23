@@ -104,22 +104,23 @@ class StrategyLearner(object):
         price_sma_ratio = prices / sma
 
         N = 5
-        Y_BUY = 0.02
-        Y_SELL = -.02
+        Y_BUY = 0.02 + self.impact
+        Y_SELL = -0.02 - self.impact
 
         # Impact: buy large volume of share can increase demand thus increasing price.
         #   Opposite is true for selling large volume of shares.
-        impact_prices_buy = prices * (1 + self.impact)
-        impact_prices_sell = prices * (1 - self.impact)
+        # impact_prices_buy = prices * (1 + self.impact)
+        # impact_prices_sell = prices * (1 - self.impact)
 
-        future_returns_buy = (impact_prices_buy.shift(-N) / impact_prices_buy) - 1.0
-        future_returns_sell = (impact_prices_sell.shift(-N) / impact_prices_sell) - 1.0
+        future_returns = (prices.shift(-N) / prices) - 1.0
+        # future_returns_buy = (impact_prices_buy.shift(-N) / impact_prices_buy) - 1.0
+        # future_returns_sell = (impact_prices_sell.shift(-N) / impact_prices_sell) - 1.0
 
         Y = pd.DataFrame(0, index=prices.index, columns=['Y_VALUE'])
-        for i in range(len(future_returns_buy)-N):
-            if future_returns_buy[i] > Y_BUY:
+        for i in range(len(future_returns)-N):
+            if future_returns[i] > Y_BUY:
                 Y['Y_VALUE'][i] = 1
-            elif future_returns_sell[i] < Y_SELL:
+            elif future_returns[i] < Y_SELL:
                 Y['Y_VALUE'][i] = -1
             else:
                 Y['Y_VALUE'][i] = 0

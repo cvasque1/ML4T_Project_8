@@ -1,10 +1,20 @@
 import datetime as dt
+import numpy as np
+
 import ManualStrategy as ms
 import StrategyLearner as sl
 import experiment1 as e1
 import experiment2 as e2
 import marketsimcode as msc
 import util as ut
+
+
+def gtid():
+    """
+    :return: The GT ID of the student
+    :rtype: int
+    """
+    return 904061644 # replace with your GT ID number
 
 
 if __name__ == "__main__":
@@ -14,6 +24,8 @@ if __name__ == "__main__":
     out_ed = dt.datetime(2011, 12, 31)
     sv = 100000
     symbol = "JPM"
+
+    np.random.seed(gtid())  # do this only once
 
     #######################
     ### Manual Strategy ###

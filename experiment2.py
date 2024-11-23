@@ -1,13 +1,14 @@
 import StrategyLearner as sl
 import marketsimcode as msc
 import matplotlib.pyplot as plt
+import pandas as pd
 
 def plot_experiment(values, impacts):
     plt.figure(figsize=(12, 6))
 
     for value, impact in zip(values, impacts):
         value_normalized = value / value.iloc[0]
-        plt.plot(value_normalized.index, value_normalized, label=f"Impact: {impact*100}%")
+        plt.plot(value_normalized.index, value_normalized, label=f"Impact = {impact*100}%")
 
     plt.title("Strategy Learner Impact")
     plt.xlabel("Dates")
@@ -17,7 +18,7 @@ def plot_experiment(values, impacts):
     plt.show()
 
 def run_experiment(symbol, in_sd, in_ed, sv):
-    impacts = [0.0, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03]
+    impacts = [0.0, .015, 0.03, .05, .1]
     values = []
 
     for impact in impacts:
@@ -28,4 +29,3 @@ def run_experiment(symbol, in_sd, in_ed, sv):
         values.append(learner_values)
 
     plot_experiment(values, impacts)
-
