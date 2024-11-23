@@ -269,8 +269,7 @@ if __name__ == "__main__":
 
     learner.add_evidence(symbol=symbol, sd=sd, ed=ed, sv=sv)
 
-    # sd = dt.datetime(2010, 1, 1)
-    # ed = dt.datetime(2011, 12, 31)
+
     trades = learner.testPolicy(symbol=symbol, sd=sd, ed=ed, sv=sv)
     values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv)
     values_normalized = values / values.iloc[0]
@@ -279,4 +278,3 @@ if __name__ == "__main__":
 
     learner.plot_benchmark(values_normalized=values_normalized, bm_values_normalized=bm_values_normalized, trades=trades)
 
-# print(trades)

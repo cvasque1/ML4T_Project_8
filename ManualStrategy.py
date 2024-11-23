@@ -212,14 +212,16 @@ class ManualStrategy(object):
         trades.dropna(inplace=True)
 
         values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv, commission=9.95, impact=0.005)
-        values_normalized = values / values.iloc[0]
 
-        return values_normalized, prices
+        return values
 
 
-    def plot_benchmark(self, values_normalized=None, bm_values_normalized=None, trades=None):
+    def plot_benchmark(self, values, bm_values, trades):
         """Function to plot the TOS vs. benchmark."""
         plt.figure(figsize=(12, 6))
+
+        values_normalized = values / values.iloc[0]
+        bm_values_normalized = bm_values / bm_values.iloc[0]
 
         plt.plot(values_normalized.index, values_normalized, label="Manual Strategy", color="red")
         plt.plot(bm_values_normalized.index, bm_values_normalized, label="Benchmark", color="purple")
@@ -239,7 +241,7 @@ class ManualStrategy(object):
         plt.ylabel("Normalized Portfolio Value")
         plt.legend(loc="best")
         plt.grid(True, linestyle='--')
-        # plt.show()
+        plt.show()
         # plt.savefig("./tos_vs_benchmark.png")
 
 
@@ -260,22 +262,6 @@ class ManualStrategy(object):
 
 
 if __name__ == "__main__":
-    manual = ManualStrategy()
-
-    sd = dt.datetime(2008, 1, 1)
-    ed = dt.datetime(2009, 12, 31)
-    # sd = dt.datetime(2010, 1, 1)
-    # ed = dt.datetime(2011, 12, 31)
-    sv = 100000
-    symbol = "JPM"
-
-    trades = manual.testPolicy(symbol=symbol, sd=sd, ed=ed, sv=sv)
-    values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv)
-    values_normalized = values / values.iloc[0]
-
-    bm_values_normalized, jpm = manual.benchmark(symbol=symbol, sd=sd, ed=ed, sv=sv)
-
-    manual.plot_benchmark(values_normalized=values_normalized, bm_values_normalized=bm_values_normalized, trades=trades)
 
     # Calculate performance metrics for both TOS and Benchmark
     cum_ret_tos, avg_daily_ret_tos, std_daily_ret_tos, sharpe_ratio_tos = msc.compute_portfolio_stats(values_normalized)
