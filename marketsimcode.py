@@ -1,4 +1,6 @@
 """"""
+from venv import create
+
 """MC2-P1: Market simulator.  		  	   		 	   		  		  		    	 		 		   		 		  
 
 Copyright 2018, Georgia Institute of Technology (Georgia Tech)  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -84,13 +86,24 @@ def get_prices(symbols, sd, ed):
     return prices_all
 
 
+def create_orders(trades, symbol):
+    orders = pd.DataFrame(0, index=trades.index, columns=["Symbol", "Order", "Shares"])
+    for i in range(len(trades)):
+        order = "BUY" if trades["Trades"].iloc[i] > 0 else "SELL"
+        share = abs(trades["Trades"].iloc[i])
+        orders.iloc[i] = [symbol, order, share]
+
+    return orders
+
+
 def compute_portvals(
-        orders,
+        trades,
         start_val=100000,
         commission=0.0,
         impact=0.0,
         sd=dt.datetime(2010, 1, 1),
-        ed=dt.datetime(2011,12,31)
+        ed=dt.datetime(2011,12,31),
+        symbol="JPM"
 ):
     """
     Computes the portfolio values.
@@ -107,7 +120,7 @@ def compute_portvals(
     :rtype: pandas.DataFrame
     """
     # Get orders info and extract symbols
-    df_orders = orders
+    df_orders = create_orders(trades, symbol)
     start_date = sd
     end_date = ed
 
