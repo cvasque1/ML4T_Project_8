@@ -45,3 +45,9 @@ if __name__ == "__main__":
     ####################
     ### Experiment 1 ###
     ####################
+    e1.run_experiment(symbol=symbol, in_sd=in_sd, in_ed=in_ed, out_sd=out_sd, out_ed=out_ed, sv=sv)
+
+    ####################
+    ### Experiment 2 ###
+    ####################
+    e2.run_experiment(symbol=symbol, in_sd=in_sd, in_ed=in_ed, out_sd=out_sd, out_ed=out_ed, sv=sv)
