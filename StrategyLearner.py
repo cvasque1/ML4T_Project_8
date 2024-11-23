@@ -230,12 +230,14 @@ class StrategyLearner(object):
 
         return values_normalized, prices
 
-
-    def plot_benchmark(self, values_normalized=None, bm_values_normalized=None, trades=None):
+    def plot_benchmark(self, values, bm_values, trades):
         """Function to plot the TOS vs. benchmark."""
         plt.figure(figsize=(12, 6))
 
-        plt.plot(values_normalized.index, values_normalized, label="Strategy Learner", color="red")
+        values_normalized = values / values.iloc[0]
+        bm_values_normalized = bm_values / bm_values.iloc[0]
+
+        plt.plot(values_normalized.index, values_normalized, label="Manual Strategy", color="red")
         plt.plot(bm_values_normalized.index, bm_values_normalized, label="Benchmark", color="purple")
 
         if trades is not None:
@@ -247,8 +249,7 @@ class StrategyLearner(object):
             for i, date in enumerate(short_entries):
                 plt.axvline(x=date, color='black', linewidth=0.75, label='SHORT Entry' if i == 0 else "")
 
-
-        plt.title("Strategy Learner vs. Benchmark (Out Sample)")
+        plt.title("Manual Strategy vs. Benchmark")
         plt.xlabel("Dates")
         plt.ylabel("Normalized Portfolio Value")
         plt.legend(loc="best")
