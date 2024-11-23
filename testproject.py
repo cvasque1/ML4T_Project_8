@@ -17,6 +17,22 @@ def gtid():
     return 904061644 # replace with your GT ID number
 
 
+def author():
+    """
+    :return: The GT username of the student
+    :rtype: str
+    """
+    return "cvasquez36"
+
+
+def study_group():
+    """
+    :return: A comma separated string of GT_Name of each member of your study group
+    :rtype: str
+    """
+    return "cvasquez36, ewu96, hwang759, kliu353, mma320, mmannerow3, steng31, qliang61"
+
+
 if __name__ == "__main__":
     in_sd = dt.datetime(2008, 1, 1)
     in_ed = dt.datetime(2009, 12, 31)

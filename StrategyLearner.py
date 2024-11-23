@@ -263,6 +263,22 @@ class StrategyLearner(object):
         plt.grid(True, linestyle='--')
         plt.show()
         # plt.savefig("./tos_vs_benchmark.png")
+
+
+    def author(self):
+        """
+        :return: The GT username of the student
+        :rtype: str
+        """
+        return "cvasquez36"
+
+
+    def study_group(self):
+        """
+        :return: A comma separated string of GT_Name of each member of your study group
+        :rtype: str
+        """
+        return "cvasquez36, ewu96, hwang759, kliu353, mma320, mmannerow3, steng31, qliang61"
   		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
 if __name__ == "__main__":
