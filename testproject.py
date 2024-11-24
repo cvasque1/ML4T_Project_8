@@ -41,22 +41,9 @@ if __name__ == "__main__":
 
     np.random.seed(gtid())  # do this only once
 
-    # learner = sl.StrategyLearner(verbose=False, impact=0.0, commission=0.0)
-    # learner.add_evidence(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
-    # learner_in_trades = learner.testPolicy(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
-    # learner_in_values = msc.compute_portvals(
-    #     trades=learner_in_trades,
-    #     sd=in_sd,
-    #     ed=in_ed,
-    #     commission=learner.commission,
-    #     impact=learner.impact, start_val=sv,
-    #     symbol=symbol
-    # )
-
-
-    #######################
-    ### Manual Strategy ###
-    #######################
+    ######################
+    ## Manual Strategy ###
+    ######################
 
     # In-sample
     manual_strategy = ms.ManualStrategy()
@@ -71,7 +58,7 @@ if __name__ == "__main__":
         symbol=symbol
     )
     benchmark_in_values = manual_strategy.benchmark(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
-    manual_strategy.plot_benchmark(manual_in_values, benchmark_in_values, manual_in_trades)
+    manual_strategy.plot_benchmark(manual_in_values, benchmark_in_values, manual_in_trades, "In-Sample")
 
     # Out-sample
     manual_out_trades = manual_strategy.testPolicy(symbol=symbol, sd=out_sd, ed=out_ed, sv=sv)
@@ -85,15 +72,15 @@ if __name__ == "__main__":
         symbol=symbol
     )
     benchmark_out_values = manual_strategy.benchmark(symbol=symbol, sd=out_sd, ed=out_ed, sv=sv)
-    manual_strategy.plot_benchmark(manual_out_values, benchmark_out_values, manual_out_trades)
+    manual_strategy.plot_benchmark(manual_out_values, benchmark_out_values, manual_out_trades, "Out-Sample")
 
 
-    ####################
-    ### Experiment 1 ###
-    ####################
+    # ####################
+    # ### Experiment 1 ###
+    # ####################
     e1.run_experiment(symbol=symbol, in_sd=in_sd, in_ed=in_ed, out_sd=out_sd, out_ed=out_ed, sv=sv)
-
-    ####################
-    ### Experiment 2 ###
-    ####################
+    #
+    # ####################
+    # ### Experiment 2 ###
+    # ####################
     e2.run_experiment(symbol=symbol, in_sd=in_sd, in_ed=in_ed, sv=sv)

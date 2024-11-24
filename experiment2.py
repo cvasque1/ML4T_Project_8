@@ -10,35 +10,35 @@ def plot_portfolio_value(values, impacts):
         value_normalized = value / value.iloc[0]
         plt.plot(value_normalized.index, value_normalized, label=f"Impact = {impact}")
 
-    plt.title("Strategy Learner Impact")
+    plt.title("Strategy Learner Performance Under Varying Market Impact")
     plt.xlabel("Dates")
     plt.ylabel("Normalized Portfolio Value")
     plt.legend(loc="best")
     plt.grid(True, linestyle='--')
-    plt.show()
+    plt.savefig(f"./experiment2_portfolio_value.png")
 
 
 def plot_cumulative_return(crs, impacts):
     plt.figure(figsize=(12, 6))
 
     plt.plot(impacts, crs, label="Cumulative Return", marker="o")
-    plt.title("Cumulative Return vs Impact")
+    plt.title("Effect of Market Impact on Cumulative Return")
     plt.xlabel("Impact")
     plt.ylabel("Cumulative Return")
     plt.grid(True, linestyle='--')
     plt.legend(loc="best")
-    plt.show()
+    plt.savefig(f"./experiment2_cumulative_return.png")
 
 
 def plot_num_trades(num_trades, impacts):
     plt.figure(figsize=(12, 6))
 
     plt.bar(impacts, num_trades, alpha=0.7, width=0.005)
-    plt.title("Number of Trades vs Impact")
+    plt.title("Effect of Market Impact on Trading Activity")
     plt.xlabel("Impact")
     plt.ylabel("Number of Trades")
     plt.grid(axis="y", linestyle='--')
-    plt.show()
+    plt.savefig(f"./experiment2_num_trades.png")
 
 
 def calculate_metrics(values, trades):

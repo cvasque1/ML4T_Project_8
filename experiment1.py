@@ -3,7 +3,7 @@ import StrategyLearner as sl
 import marketsimcode as msc
 import matplotlib.pyplot as plt
 
-def plot_experiment(ms_values, sl_values, bm_values, sample_type):
+def plot_experiment(ms_values, sl_values, bm_values, sample_type, symbol):
     """Function to plot the TOS vs. benchmark."""
     plt.figure(figsize=(12, 6))
 
@@ -15,13 +15,12 @@ def plot_experiment(ms_values, sl_values, bm_values, sample_type):
     plt.plot(sl_values_normalized.index, sl_values_normalized, label="Strategy Learner", color="blue")
     plt.plot(bm_values_normalized.index, bm_values_normalized, label="Benchmark", color="purple")
 
-    plt.title(f"Manual Strategy vs. Strategy Learner ({sample_type})")
+    plt.title(f"Manual Strategy vs. Strategy Learner for {symbol} ({sample_type})")
     plt.xlabel("Dates")
     plt.ylabel("Normalized Portfolio Value")
     plt.legend(loc="best")
     plt.grid(True, linestyle='--')
-    plt.show()
-    # plt.savefig("./tos_vs_benchmark.png")
+    plt.savefig(f"experiment1_{sample_type}.png")
 
 
 def run_experiment(symbol, in_sd, in_ed, out_sd, out_ed, sv):
@@ -75,6 +74,6 @@ def run_experiment(symbol, in_sd, in_ed, out_sd, out_ed, sv):
     )
 
     # Plot in and out sample strategies
-    plot_experiment(manual_in_values, learner_in_values, benchmark_in_values, "In-Sample")
-    plot_experiment(manual_out_values, learner_out_values, benchmark_out_values, "Out-Sample")
+    plot_experiment(manual_in_values, learner_in_values, benchmark_in_values, "In-Sample", symbol)
+    plot_experiment(manual_out_values, learner_out_values, benchmark_out_values, "Out-Sample", symbol)
 

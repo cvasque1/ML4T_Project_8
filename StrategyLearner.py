@@ -61,39 +61,7 @@ class StrategyLearner(object):
         self.verbose = verbose  		  	   		 	   		  		  		    	 		 		   		 		  
         self.impact = impact  		  	   		 	   		  		  		    	 		 		   		 		  
         self.commission = commission
-        self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": 5}, bags=20) # Default hyperparams
-
-
-    def optimize_paramters(self, x, y, symbol, sd, ed, sv):
-        param_grid = {
-            "leaf_size": range(5, 10, 1),
-            "bags": range(20, 60, 10)
-        }
-
-        best_cr = float('-inf')
-        best_params = None
-        for l, b in list(product(param_grid["leaf_size"], param_grid["bags"])):
-            self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": l}, bags=b)
-            self.learner.add_evidence(x.values, y['Y_VALUE'])
-
-            trades = self.testPolicy(symbol=symbol, sd=sd, ed=ed, sv=sv)
-            portvals = msc.compute_portvals(
-                trades=trades,
-                sd=sd,
-                ed=ed,
-                start_val=sv,
-                commission=self.commission,
-                impact=self.impact,
-                symbol=symbol
-            )
-
-            cr, _, _, sr = msc.compute_portfolio_stats(portvals)
-
-            if cr[0] > best_cr:
-                best_cr = cr[0]
-                best_params = {"leaf_size": l, "bags": b}
-
-        return best_params["leaf_size"], best_params["bags"]
+        self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": 5}, bags=100) # Default hyperparams
 
 
     def add_evidence(  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -165,11 +133,6 @@ class StrategyLearner(object):
             'Momemtum': momentum,
         })
 
-
-        leaf_size, bag_size = self.optimize_paramters(x, Y, symbol, sd, ed, sv)
-        # print(f"Optimal leaf_size: {leaf_size} and bags: {bag_size}")
-        # exit()
-        self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": leaf_size}, bags=bag_size)
         self.learner.add_evidence(x.values, Y['Y_VALUE'])
 
   		  	   		 	   		  		  		    	 		 		   		 		  

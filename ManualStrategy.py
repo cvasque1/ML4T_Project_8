@@ -223,7 +223,7 @@ class ManualStrategy(object):
         return values
 
 
-    def plot_benchmark(self, values, bm_values, trades):
+    def plot_benchmark(self, values, bm_values, trades, title):
         """Function to plot the TOS vs. benchmark."""
         plt.figure(figsize=(12, 6))
 
@@ -243,13 +243,12 @@ class ManualStrategy(object):
                 plt.axvline(x=date, color='black', linewidth=0.75, label='SHORT Entry' if i == 0 else "")
 
 
-        plt.title("Manual Strategy vs. Benchmark")
+        plt.title(f"Manual Strategy vs. Benchmark for JPM ({title})")
         plt.xlabel("Dates")
         plt.ylabel("Normalized Portfolio Value")
         plt.legend(loc="best")
         plt.grid(True, linestyle='--')
-        plt.show()
-        # plt.savefig("./tos_vs_benchmark.png")
+        plt.savefig(f"./manual_strategy_{title}.png")
 
 
     def author(self):
