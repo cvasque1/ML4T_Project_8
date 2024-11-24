@@ -56,7 +56,14 @@ def run_experiment(symbol, in_sd, in_ed, sv):
         learner = sl.StrategyLearner(verbose=False, impact=impact, commission=0.0)
         learner.add_evidence(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
         learner_trades = learner.testPolicy(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
-        learner_values = msc.compute_portvals(learner_trades, sd=in_sd, ed=in_ed, start_val=sv)
+        learner_values = msc.compute_portvals(
+            trades=learner_trades,
+            sd=in_sd,
+            ed=in_ed,
+            commission=learner.commission,
+            impact=learner.impact, start_val=sv,
+            symbol=symbol
+        )
 
         values.append(learner_values)
         cr, n_trades = calculate_metrics(learner_values, learner_trades)

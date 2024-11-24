@@ -191,6 +191,7 @@ class ManualStrategy(object):
                 holdings = -1000
 
         trades.dropna(inplace=True)
+        trades = trades[trades["Trades"] != 0]
 
         return trades
 
@@ -211,8 +212,7 @@ class ManualStrategy(object):
         trades.dropna(inplace=True)
         values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv,
                                       commission=self.commission, impact=self.impact,
-                                      symbol=symbol
-        )
+                                      symbol=symbol)
 
         return values
 

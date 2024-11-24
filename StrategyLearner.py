@@ -190,7 +190,7 @@ class StrategyLearner(object):
 
         pred_y = self.learner.query(x.values)
 
-        trades = pd.DataFrame(0, index=prices.index, columns=["Symbol", "Order", "Shares", "Reason"])
+        trades = pd.DataFrame(0, index=prices.index, columns=["Trades"])
         trades.index.name = "Date"
         holdings = 0
 
@@ -198,21 +198,21 @@ class StrategyLearner(object):
             prediction = pred_y[i]
 
             if prediction > 0 and holdings == 0:
-                trades.iloc[i] = [symbol, "BUY", 1000, "LONG"]
+                trades.iloc[i] = 1000
                 holdings = 1000
             elif prediction > 0 and holdings == -1000:
-                trades.iloc[i] = [symbol, "BUY", 2000, "LONG"]
+                trades.iloc[i] = 2000
                 holdings = 1000
             elif prediction < 0 and holdings == 0:
-                trades.iloc[i] = [symbol, "SELL", 1000, "SHORT"]
+                trades.iloc[i] = -1000
                 holdings = -1000
             elif prediction < 0 and holdings == 1000:
-                trades.iloc[i] = [symbol, "SELL", 2000, "SHORT"]
+                trades.iloc[i] = -2000
                 holdings = -1000
 
         trades.dropna(inplace=True)
-        trades = trades[trades['Order'] != 0]
-        # print(trades)
+        trades = trades[trades["Trades"] != 0]
+
         return trades
 
 
@@ -223,16 +223,17 @@ class StrategyLearner(object):
             ed=dt.datetime(2009, 12, 31),
             sv=100000,
     ):
-        print(symbol)
         dates = pd.date_range(sd, ed)
         prices = ut.get_data([symbol], dates)[symbol]
 
-        trades = pd.DataFrame(index=prices.index, columns=["Symbol", "Order", "Shares"])
+        trades = pd.DataFrame(index=prices.index, columns=["Trades"])
         trades.index.name = "Date"
-        trades.iloc[0] = [symbol, "BUY", 1000]
+        trades.iloc[0] = 1000
         trades.dropna(inplace=True)
 
-        values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv, commission=9.95, impact=0.005)
+        values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv,
+                                      commission=self.commission, impact=self.impact,
+                                      symbol=symbol)
         values_normalized = values / values.iloc[0]
 
         return values_normalized, prices
@@ -248,8 +249,8 @@ class StrategyLearner(object):
         plt.plot(bm_values_normalized.index, bm_values_normalized, label="Benchmark", color="purple")
 
         if trades is not None:
-            long_entries = trades[(trades['Reason'] == 'LONG')].index
-            short_entries = trades[(trades['Reason'] == 'SHORT')].index
+            long_entries = trades[(trades['Trades'] > 0)].index
+            short_entries = trades[(trades['Trades'] < 0)].index
 
             for i, date in enumerate(long_entries):
                 plt.axvline(x=date, color='blue', linewidth=0.75, label='LONG Entry' if i == 0 else "")
