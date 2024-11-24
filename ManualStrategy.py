@@ -210,9 +210,15 @@ class ManualStrategy(object):
         trades.index.name = "Date"
         trades.iloc[0] = 1000
         trades.dropna(inplace=True)
-        values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv,
-                                      commission=self.commission, impact=self.impact,
-                                      symbol=symbol)
+        values = msc.compute_portvals(
+            trades=trades,
+            sd=sd,
+            ed=ed,
+            start_val=sv,
+            commission=self.commission,
+            impact=self.impact,
+            symbol=symbol
+        )
 
         return values
 
@@ -261,15 +267,3 @@ class ManualStrategy(object):
         """
         return "cvasquez36, ewu96, hwang759, kliu353, mma320, mmannerow3, steng31, qliang61"
 
-
-if __name__ == "__main__":
-
-    # Calculate performance metrics for both TOS and Benchmark
-    cum_ret_tos, avg_daily_ret_tos, std_daily_ret_tos, sharpe_ratio_tos = msc.compute_portfolio_stats(values_normalized)
-    cum_ret_bm, avg_daily_ret_bm, std_daily_ret_bm, sharpe_ratio_bm = msc.compute_portfolio_stats(bm_values_normalized)
-
-    print(f"{'Metric':<25}{'Benchmark':<15}{'Manual Strategy':<15}")
-    print(f"{'-' * 50}")
-    print(f"{'Cumulative Return':<25}{cum_ret_bm[0]:<15.6f}{cum_ret_tos[0]:<15.6f}")
-    print(f"{'Standard Deviation':<25}{std_daily_ret_bm[0]:<15.6f}{std_daily_ret_tos[0]:<15.6f}")
-    print(f"{'Mean of Daily Returns':<25}{avg_daily_ret_bm[0]:<15.6f}{avg_daily_ret_tos[0]:<15.6f}")

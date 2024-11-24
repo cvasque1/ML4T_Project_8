@@ -2,11 +2,9 @@ import datetime as dt
 import numpy as np
 
 import ManualStrategy as ms
-import StrategyLearner as sl
 import experiment1 as e1
 import experiment2 as e2
 import marketsimcode as msc
-import util as ut
 
 
 def gtid():
@@ -46,37 +44,36 @@ if __name__ == "__main__":
     #######################
     ### Manual Strategy ###
     #######################
-    # manual_strategy = ms.ManualStrategy()
-    # manual_in_trades = manual_strategy.testPolicy(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
-    # manual_in_values = msc.compute_portvals(manual_in_trades, sd=in_sd, ed=in_ed, start_val=sv,
-    #                                         commission=manual_strategy.commission, impact=manual_strategy.impact,
-    #                                         symbol=symbol)
-    # benchmark_in_values = manual_strategy.benchmark(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
-    # manual_strategy.plot_benchmark(manual_in_values, benchmark_in_values, manual_in_trades)
-    #
-    # manual_out_trades = manual_strategy.testPolicy(symbol=symbol, sd=out_sd, ed=out_ed, sv=sv)
-    # manual_out_values = msc.compute_portvals(manual_out_trades, sd=out_sd, ed=out_ed, start_val=sv,
-    #                                          commission=manual_strategy.commission, impact=manual_strategy.impact,
-    #                                          symbol=symbol)
-    # benchmark_out_values = manual_strategy.benchmark(symbol=symbol, sd=out_sd, ed=out_ed, sv=sv)
-    # manual_strategy.plot_benchmark(manual_out_values, benchmark_out_values, manual_out_trades)
 
-    # #######################
-    # ### Strategy Leaner ###
-    # #######################
-    # learner = sl.StrategyLearner(verbose=False, impact=0.0, commission=0.0)
-    # learner.add_evidence(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
-    # learner_in_trades = learner.testPolicy(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
-    # learner_in_values = msc.compute_portvals(learner_in_trades, sd=in_sd, ed=in_ed,
-    #                                          commission=learner.commission, impact=learner.impact, start_val=sv,
-    #                                          symbol=symbol)
-    # learner.plot_benchmark(learner_in_values, benchmark_in_values, learner_in_trades)
+    # In-sample
+    manual_strategy = ms.ManualStrategy()
+    manual_in_trades = manual_strategy.testPolicy(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
+    manual_in_values = msc.compute_portvals(
+        trades=manual_in_trades,
+        sd=in_sd,
+        ed=in_ed,
+        start_val=sv,
+        commission=manual_strategy.commission,
+        impact=manual_strategy.impact,
+        symbol=symbol
+    )
+    benchmark_in_values = manual_strategy.benchmark(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
+    manual_strategy.plot_benchmark(manual_in_values, benchmark_in_values, manual_in_trades)
 
-    # learner_out_trades = learner.testPolicy(symbol=symbol, sd=out_sd, ed=out_ed, sv=sv)
-    # learner_out_values = msc.compute_portvals(learner_out_trades, sd=out_sd, ed=out_ed,
-    #                                           commission=learner.commission, impact=learner.impact, start_val=sv,
-    #                                           symbol=symbol)
-    # learner.plot_benchmark(learner_out_values, benchmark_out_values, learner_out_trades)
+    # Out-sample
+    manual_out_trades = manual_strategy.testPolicy(symbol=symbol, sd=out_sd, ed=out_ed, sv=sv)
+    manual_out_values = msc.compute_portvals(
+        trades=manual_out_trades,
+        sd=out_sd,
+        ed=out_ed,
+        start_val=sv,
+        commission=manual_strategy.commission,
+        impact=manual_strategy.impact,
+        symbol=symbol
+    )
+    benchmark_out_values = manual_strategy.benchmark(symbol=symbol, sd=out_sd, ed=out_ed, sv=sv)
+    manual_strategy.plot_benchmark(manual_out_values, benchmark_out_values, manual_out_trades)
+
 
     ####################
     ### Experiment 1 ###

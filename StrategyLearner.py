@@ -231,9 +231,15 @@ class StrategyLearner(object):
         trades.iloc[0] = 1000
         trades.dropna(inplace=True)
 
-        values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv,
-                                      commission=self.commission, impact=self.impact,
-                                      symbol=symbol)
+        values = msc.compute_portvals(
+            trades=trades,
+            sd=sd,
+            ed=ed,
+            start_val=sv,
+            commission=self.commission,
+            impact=self.impact,
+            symbol=symbol
+        )
         values_normalized = values / values.iloc[0]
 
         return values_normalized, prices
@@ -280,26 +286,3 @@ class StrategyLearner(object):
         :rtype: str
         """
         return "cvasquez36, ewu96, hwang759, kliu353, mma320, mmannerow3, steng31, qliang61"
-  		  	   		 	   		  		  		    	 		 		   		 		  
-  		  	   		 	   		  		  		    	 		 		   		 		  
-if __name__ == "__main__":
-    learner = StrategyLearner()
-
-    sd = dt.datetime(2008, 1, 1)
-    ed = dt.datetime(2009, 12, 31)
-    # sd = dt.datetime(2010, 1, 1)
-    # ed = dt.datetime(2011, 12, 31)
-    sv = 100000
-    symbol = "JPM"
-
-    learner.add_evidence(symbol=symbol, sd=sd, ed=ed, sv=sv)
-
-
-    trades = learner.testPolicy(symbol=symbol, sd=sd, ed=ed, sv=sv)
-    values = msc.compute_portvals(trades, sd=sd, ed=ed, start_val=sv)
-    values_normalized = values / values.iloc[0]
-
-    bm_values_normalized, jpm = learner.benchmark(symbol=symbol, sd=sd, ed=ed, sv=sv)
-
-    learner.plot_benchmark(values_normalized=values_normalized, bm_values_normalized=bm_values_normalized, trades=trades)
-
