@@ -22,15 +22,16 @@ GT honor code violation.
   		  	   		 	   		  		  		    	 		 		   		 		  
 -----do not edit anything above this line---  		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
-Student Name: Tucker Balch (replace with your name)  		  	   		 	   		  		  		    	 		 		   		 		  
-GT User ID: tb34 (replace with your User ID)  		  	   		 	   		  		  		    	 		 		   		 		  
-GT ID: 900897987 (replace with your GT ID)  		  	   		 	   		  		  		    	 		 		   		 		  
+Student Name: Carlos Vasquez (replace with your name)  		  	   		 	   		  		  		    	 		 		   		 		  
+GT User ID: cvasquez36 (replace with your User ID)  		  	   		 	   		  		  		    	 		 		   		 		  
+GT ID: 904061644 (replace with your GT ID)  		  	   		 	   		  		  		    	 		 		   		 		  
 """  		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
 import datetime as dt  		  	   		 	   		  		  		    	 		 		   		 		  
 import random
 import pandas as pd
 import matplotlib.pyplot as plt
+from itertools import product
 
 import util as ut
 import marketsimcode as msc
@@ -60,7 +61,40 @@ class StrategyLearner(object):
         self.verbose = verbose  		  	   		 	   		  		  		    	 		 		   		 		  
         self.impact = impact  		  	   		 	   		  		  		    	 		 		   		 		  
         self.commission = commission
-        self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": 5}, bags=20)
+        self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": 5}, bags=20) # Default hyperparams
+
+
+    def optimize_paramters(self, x, y, symbol, sd, ed, sv):
+        param_grid = {
+            "leaf_size": range(5, 10, 1),
+            "bags": range(20, 60, 10)
+        }
+
+        best_cr = float('-inf')
+        best_params = None
+        for l, b in list(product(param_grid["leaf_size"], param_grid["bags"])):
+            self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": l}, bags=b)
+            self.learner.add_evidence(x.values, y['Y_VALUE'])
+
+            trades = self.testPolicy(symbol=symbol, sd=sd, ed=ed, sv=sv)
+            portvals = msc.compute_portvals(
+                trades=trades,
+                sd=sd,
+                ed=ed,
+                start_val=sv,
+                commission=self.commission,
+                impact=self.impact,
+                symbol=symbol
+            )
+
+            cr, _, _, sr = msc.compute_portfolio_stats(portvals)
+
+            if cr[0] > best_cr:
+                best_cr = cr[0]
+                best_params = {"leaf_size": l, "bags": b}
+
+        return best_params["leaf_size"], best_params["bags"]
+
 
     def add_evidence(  		  	   		 	   		  		  		    	 		 		   		 		  
         self,  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -124,7 +158,6 @@ class StrategyLearner(object):
                 Y['Y_VALUE'][i] = -1
             else:
                 Y['Y_VALUE'][i] = 0
-        # pd.set_option('display.max_rows', None)
 
         x = pd.DataFrame({
             'Price/SMA': price_sma_ratio,
@@ -132,7 +165,11 @@ class StrategyLearner(object):
             'Momemtum': momentum,
         })
 
-        # print(Y['Y_VALUE'])
+
+        leaf_size, bag_size = self.optimize_paramters(x, Y, symbol, sd, ed, sv)
+        # print(f"Optimal leaf_size: {leaf_size} and bags: {bag_size}")
+        # exit()
+        self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": leaf_size}, bags=bag_size)
         self.learner.add_evidence(x.values, Y['Y_VALUE'])
 
   		  	   		 	   		  		  		    	 		 		   		 		  

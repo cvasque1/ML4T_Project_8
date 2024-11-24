@@ -1,6 +1,6 @@
 import datetime as dt
 import numpy as np
-
+import StrategyLearner as sl
 import ManualStrategy as ms
 import experiment1 as e1
 import experiment2 as e2
@@ -40,6 +40,19 @@ if __name__ == "__main__":
     symbol = "JPM"
 
     np.random.seed(gtid())  # do this only once
+
+    # learner = sl.StrategyLearner(verbose=False, impact=0.0, commission=0.0)
+    # learner.add_evidence(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
+    # learner_in_trades = learner.testPolicy(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
+    # learner_in_values = msc.compute_portvals(
+    #     trades=learner_in_trades,
+    #     sd=in_sd,
+    #     ed=in_ed,
+    #     commission=learner.commission,
+    #     impact=learner.impact, start_val=sv,
+    #     symbol=symbol
+    # )
+
 
     #######################
     ### Manual Strategy ###
