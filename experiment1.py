@@ -25,7 +25,7 @@ def plot_experiment(ms_values, sl_values, bm_values, sample_type, symbol):
 
 def run_experiment(symbol, in_sd, in_ed, out_sd, out_ed, sv):
     # Manual Strategy and Benchmark values (in and out sample)
-    manual_strategy = ms.ManualStrategy()
+    manual_strategy = ms.ManualStrategy(impact=0.005, commission=9.95)
     manual_in_trades = manual_strategy.testPolicy(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
     manual_in_values = msc.compute_portvals(
         trades=manual_in_trades,
@@ -51,7 +51,7 @@ def run_experiment(symbol, in_sd, in_ed, out_sd, out_ed, sv):
     benchmark_out_values = manual_strategy.benchmark(symbol=symbol, sd=out_sd, ed=out_ed, sv=sv)
 
     # Strategy Learner (in and out sample)
-    learner = sl.StrategyLearner(verbose=False, impact=0.0, commission=0.0)
+    learner = sl.StrategyLearner(verbose=False, impact=0.005, commission=9.95)
     learner.add_evidence(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
     learner_in_trades = learner.testPolicy(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
     learner_in_values = msc.compute_portvals(
