@@ -1,7 +1,5 @@
 """"""
-from turtledemo.forest import start
 
-from matplotlib.lines import lineStyles
 
 """  		  	   		 	   		  		  		    	 		 		   		 		  
 Template for implementing StrategyLearner  (c) 2016 Tucker Balch  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -26,13 +24,12 @@ GT honor code violation.
 
 -----do not edit anything above this line---  		  	   		 	   		  		  		    	 		 		   		 		  
 
-Student Name: Tucker Balch (replace with your name)  		  	   		 	   		  		  		    	 		 		   		 		  
-GT User ID: tb34 (replace with your User ID)  		  	   		 	   		  		  		    	 		 		   		 		  
-GT ID: 900897987 (replace with your GT ID)  		  	   		 	   		  		  		    	 		 		   		 		  
+Student Name: Carlos Vasquez (replace with your name)  		  	   		 	   		  		  		    	 		 		   		 		  
+GT User ID: cvasquez36 (replace with your User ID)  		  	   		 	   		  		  		    	 		 		   		 		  
+GT ID: 904061644 (replace with your GT ID)  	  	   		 	   		  		  		    	 		 		   		 		  
 """
 
 import datetime as dt
-import random
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -65,7 +62,6 @@ class ManualStrategy(object):
         self.impact = impact
         self.commission = commission
 
-        # this method should create a QLearner, and train it for trading
 
     def add_evidence(
             self,
@@ -203,6 +199,20 @@ class ManualStrategy(object):
             ed=dt.datetime(2009, 12, 31),
             sv=100000,
     ):
+        """
+        Compute benchmark performance (buy 1000 Shares and hold for date range
+
+        :param symbol: The stock symbol for benchmark calculation
+        :type symbol: str
+        :param sd: A datetime object that represents the start date, defaults to 1/1/2008
+        :type sd: datetime
+        :param ed: A datetime object that represents the end date, defaults to 12/1/2009
+        :type ed: datetime
+        :param sv: The starting value of the portfolio
+        :type sv: int
+        :return: Portfolio values for the benchmark
+        :rtype: pandas.DataFrame
+        """
         dates = pd.date_range(sd, ed)
         prices = get_data([symbol], dates)[symbol]
 
@@ -210,6 +220,8 @@ class ManualStrategy(object):
         trades.index.name = "Date"
         trades.iloc[0] = 1000
         trades.dropna(inplace=True)
+
+        # Calculate portfolio value
         values = msc.compute_portvals(
             trades=trades,
             sd=sd,
@@ -224,7 +236,18 @@ class ManualStrategy(object):
 
 
     def plot_benchmark(self, values, bm_values, trades, title):
-        """Function to plot the TOS vs. benchmark."""
+        """
+        Plot manual strategy performance against the benchmark.
+
+        :param values: Strategy Learner's portfolio values.
+        :type values: pandas.DataFrame
+        :param bm_values: Benchmark's portfolio values.
+        :type bm_values: pandas.DataFrame
+        :param trades: Trades indicating buy/sell actions.
+        :type trades: pandas.DataFrame
+        :param title: String to determine in-sample vs out-sample
+        :type title: String
+        """
         plt.figure(figsize=(12, 6))
 
         values_normalized = values / values.iloc[0]
@@ -233,6 +256,7 @@ class ManualStrategy(object):
         plt.plot(values_normalized.index, values_normalized, label="Manual Strategy", color="red")
         plt.plot(bm_values_normalized.index, bm_values_normalized, label="Benchmark", color="purple")
 
+        # Plot LONG and SHORT entry points
         if trades is not None:
             long_entries = trades[(trades['Trades'] > 0)].index
             short_entries = trades[(trades['Trades'] < 0)].index

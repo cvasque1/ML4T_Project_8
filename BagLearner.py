@@ -109,8 +109,3 @@ class BagLearner(object):
         """
         predictions = np.array([learner.query(points) for learner in self.learners])
         return mode(predictions, axis=0).mode[0]
-        # return np.mean(predictions, axis=0)
-
-
-if __name__ == "__main__":
-    print("the secret clue is 'zzyzx'")

@@ -52,6 +52,7 @@ def run_experiment(symbol, in_sd, in_ed, sv):
     crs = [] # Cumulative Returns
     num_trades = [] # Number of trades
 
+    # Loop through impacts and evaluate each performance
     for impact in impacts:
         learner = sl.StrategyLearner(verbose=False, impact=impact, commission=0.0)
         learner.add_evidence(symbol=symbol, sd=in_sd, ed=in_ed, sv=sv)
@@ -65,6 +66,7 @@ def run_experiment(symbol, in_sd, in_ed, sv):
             symbol=symbol
         )
 
+        # Calculate metrics for the current impact
         values.append(learner_values)
         cr, n_trades = calculate_metrics(learner_values, learner_trades)
         crs.append(cr)

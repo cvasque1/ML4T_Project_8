@@ -158,7 +158,3 @@ class RTLearner(object):
         :rtype: numpy.ndarray
         """
         return np.array([self.query_single_point(p) for p in points])
-
-
-if __name__ == "__main__":
-    print("the secret clue is 'zzyzx'")

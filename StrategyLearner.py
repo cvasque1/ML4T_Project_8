@@ -1,4 +1,4 @@
-""""""  		  	   		 	   		  		  		    	 		 		   		 		  
+
 """  		  	   		 	   		  		  		    	 		 		   		 		  
 Template for implementing StrategyLearner  (c) 2016 Tucker Balch  		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
@@ -13,7 +13,7 @@ works, including solutions to the projects assigned in this course. Students
 and other users of this template code are advised not to share it with others  		  	   		 	   		  		  		    	 		 		   		 		  
 or to make it available on publicly viewable websites including repositories  		  	   		 	   		  		  		    	 		 		   		 		  
 such as github and gitlab.  This copyright statement should not be removed  		  	   		 	   		  		  		    	 		 		   		 		  
-or edited.  		  	   		 	   		  		  		    	 		 		   		 		  
+or edited.  		  	   		 	   		  		  		   	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
 We do grant permission to share solutions privately with non-students such  		  	   		 	   		  		  		    	 		 		   		 		  
 as potential employers. However, sharing with other current or future  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -27,11 +27,10 @@ GT User ID: cvasquez36 (replace with your User ID)
 GT ID: 904061644 (replace with your GT ID)  		  	   		 	   		  		  		    	 		 		   		 		  
 """  		  	   		 	   		  		  		    	 		 		   		 		  
   		  	   		 	   		  		  		    	 		 		   		 		  
-import datetime as dt  		  	   		 	   		  		  		    	 		 		   		 		  
-import random
+import datetime as dt
 import pandas as pd
 import matplotlib.pyplot as plt
-from itertools import product
+
 
 import util as ut
 import marketsimcode as msc
@@ -61,7 +60,7 @@ class StrategyLearner(object):
         self.verbose = verbose  		  	   		 	   		  		  		    	 		 		   		 		  
         self.impact = impact  		  	   		 	   		  		  		    	 		 		   		 		  
         self.commission = commission
-        self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": 5}, bags=100) # Default hyperparams
+        self.learner = bl.BagLearner(learner=rt.RTLearner, kwargs={"leaf_size": 5}, bags=100)
 
 
     def add_evidence(  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -69,7 +68,7 @@ class StrategyLearner(object):
         symbol="IBM",  		  	   		 	   		  		  		    	 		 		   		 		  
         sd=dt.datetime(2008, 1, 1),  		  	   		 	   		  		  		    	 		 		   		 		  
         ed=dt.datetime(2009, 1, 1),  		  	   		 	   		  		  		    	 		 		   		 		  
-        sv=10000,  		  	   		 	   		  		  		    	 		 		   		 		  
+        sv=100000,
     ):  		  	   		 	   		  		  		    	 		 		   		 		  
         """  		  	   		 	   		  		  		    	 		 		   		 		  
         Trains your strategy learner over a given time frame.  		  	   		 	   		  		  		    	 		 		   		 		  
@@ -92,7 +91,7 @@ class StrategyLearner(object):
         dates = pd.date_range(extended_sd, ed)
         prices_extended = ut.get_data([symbol], dates)[symbol]
 
-        # Calculate indicators (SMA, BBp, MACD)
+        # Calculate indicators (SMA, BBp, Momentum)
         sma = ind.calculate_SMA(prices_extended, window_size)
         bbp = ind.calculate_bollinger_bands_percent(prices_extended, sma, window_size)
         momentum = ind.calculate_momentum(prices_extended, window_size)
@@ -103,21 +102,19 @@ class StrategyLearner(object):
         bbp = bbp.loc[sd:ed]
         momentum = momentum.loc[sd:ed]
 
-        price_sma_ratio = prices / sma
+        # Use indicators to create a feature set
+        x = pd.DataFrame({
+            'Price/SMA': prices / sma,
+            'BBP': bbp,
+            'Momemtum': momentum,
+        })
 
-        N = 5
+        N = 5 # Days we're looking forward
         Y_BUY = 0.02 + self.impact
         Y_SELL = -0.02 - self.impact
-
-        # Impact: buy large volume of share can increase demand thus increasing price.
-        #   Opposite is true for selling large volume of shares.
-        # impact_prices_buy = prices * (1 + self.impact)
-        # impact_prices_sell = prices * (1 - self.impact)
-
         future_returns = (prices.shift(-N) / prices) - 1.0
-        # future_returns_buy = (impact_prices_buy.shift(-N) / impact_prices_buy) - 1.0
-        # future_returns_sell = (impact_prices_sell.shift(-N) / impact_prices_sell) - 1.0
 
+        # Determine Y predication on a given date. Based off pseudocode posted in canvas.
         Y = pd.DataFrame(0, index=prices.index, columns=['Y_VALUE'])
         for i in range(len(future_returns)-N):
             if future_returns[i] > Y_BUY:
@@ -127,12 +124,7 @@ class StrategyLearner(object):
             else:
                 Y['Y_VALUE'][i] = 0
 
-        x = pd.DataFrame({
-            'Price/SMA': price_sma_ratio,
-            'BBP': bbp,
-            'Momemtum': momentum,
-        })
-
+        # Train learner
         self.learner.add_evidence(x.values, Y['Y_VALUE'])
 
   		  	   		 	   		  		  		    	 		 		   		 		  
@@ -161,6 +153,7 @@ class StrategyLearner(object):
             long so long as net holdings are constrained to -1000, 0, and 1000.  		  	   		 	   		  		  		    	 		 		   		 		  
         :rtype: pandas.DataFrame  		  	   		 	   		  		  		    	 		 		   		 		  
         """
+        # Include buffer days for window size to account for non-trading days
         window_size = 20
         buffer_days = window_size * 2
         extended_sd = sd - pd.DateOffset(days=buffer_days)
@@ -169,7 +162,7 @@ class StrategyLearner(object):
         dates = pd.date_range(extended_sd, ed)
         prices_extended = ut.get_data([symbol], dates)[symbol]
 
-        # Calculate indicators (SMA, BBp, MACD)
+        # Calculate indicators (SMA, BBp, Momentum)
         sma = ind.calculate_SMA(prices_extended, window_size)
         bbp = ind.calculate_bollinger_bands_percent(prices_extended, sma, window_size)
         momentum = ind.calculate_momentum(prices_extended, window_size)
@@ -180,20 +173,19 @@ class StrategyLearner(object):
         bbp = bbp.loc[sd:ed]
         momentum = momentum.loc[sd:ed]
 
-        price_sma_ratio = prices / sma
-
+        # Use indicators to create a feature set
         x = pd.DataFrame({
-            'Price/SMA': price_sma_ratio,
+            'Price/SMA': prices / sma,
             'BBP': bbp,
             'Momemtum': momentum,
         })
 
         pred_y = self.learner.query(x.values)
 
+        # Create trades based on predictions made from trained learner
         trades = pd.DataFrame(0, index=prices.index, columns=["Trades"])
         trades.index.name = "Date"
         holdings = 0
-
         for i in range(len(pred_y)):
             prediction = pred_y[i]
 
@@ -223,14 +215,30 @@ class StrategyLearner(object):
             ed=dt.datetime(2009, 12, 31),
             sv=100000,
     ):
+        """
+        Compute benchmark performance (buy 1000 Shares and hold for date range
+
+        :param symbol: The stock symbol for benchmark calculation
+        :type symbol: str
+        :param sd: A datetime object that represents the start date, defaults to 1/1/2008
+        :type sd: datetime
+        :param ed: A datetime object that represents the end date, defaults to 12/1/2009
+        :type ed: datetime
+        :param sv: The starting value of the portfolio
+        :type sv: int
+        :return: Normalized portfolio values for the benchmark
+        :rtype: pandas.DataFrame
+        """
         dates = pd.date_range(sd, ed)
         prices = ut.get_data([symbol], dates)[symbol]
 
+        # Buy 1000 shares on first trading day
         trades = pd.DataFrame(index=prices.index, columns=["Trades"])
         trades.index.name = "Date"
         trades.iloc[0] = 1000
         trades.dropna(inplace=True)
 
+        # Calculate portfolio value
         values = msc.compute_portvals(
             trades=trades,
             sd=sd,
@@ -242,10 +250,22 @@ class StrategyLearner(object):
         )
         values_normalized = values / values.iloc[0]
 
-        return values_normalized, prices
+        return values_normalized
 
-    def plot_benchmark(self, values, bm_values, trades):
-        """Function to plot the TOS vs. benchmark."""
+
+    def plot_benchmark(self, values, bm_values, trades, title):
+        """
+        Plot strategy learner performance against the benchmark.
+
+        :param values: Strategy Learner's portfolio values.
+        :type values: pandas.DataFrame
+        :param bm_values: Benchmark's portfolio values.
+        :type bm_values: pandas.DataFrame
+        :param trades: Trades indicating buy/sell actions.
+        :type trades: pandas.DataFrame
+        :param title: String to determine in-sample vs out-sample
+        :type title: String
+        """
         plt.figure(figsize=(12, 6))
 
         values_normalized = values / values.iloc[0]
@@ -254,6 +274,7 @@ class StrategyLearner(object):
         plt.plot(values_normalized.index, values_normalized, label="Manual Strategy", color="red")
         plt.plot(bm_values_normalized.index, bm_values_normalized, label="Benchmark", color="purple")
 
+        # Plot LONG and SHORT entry points
         if trades is not None:
             long_entries = trades[(trades['Trades'] > 0)].index
             short_entries = trades[(trades['Trades'] < 0)].index
@@ -268,8 +289,7 @@ class StrategyLearner(object):
         plt.ylabel("Normalized Portfolio Value")
         plt.legend(loc="best")
         plt.grid(True, linestyle='--')
-        plt.show()
-        # plt.savefig("./tos_vs_benchmark.png")
+        plt.savefig(f"./strategy_learner_{title}.png")
 
 
     def author(self):

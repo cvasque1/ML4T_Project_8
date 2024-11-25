@@ -1,5 +1,4 @@
 """"""
-from venv import create
 
 """MC2-P1: Market simulator.  		  	   		 	   		  		  		    	 		 		   		 		  
 
@@ -120,10 +119,11 @@ def compute_portvals(
     :rtype: pandas.DataFrame
     """
     # Get orders info and extract symbols
-    df_orders = create_orders(trades, symbol)
+    df_orders = create_orders(trades, symbol) # Convert trades into orders
     start_date = sd
     end_date = ed
 
+    # Get price data for all symbols
     symbols = df_orders['Symbol'].unique()
     df_prices = get_prices(symbols, start_date, end_date)
     symbols = df_prices.columns[df_prices.columns != 'Cash'].tolist()
@@ -132,6 +132,7 @@ def compute_portvals(
 
     df_holdings = get_holdings(df_trades, start_val)
 
+    # Calculate portfolio values
     df_values = get_values(df_holdings, df_prices)
 
     df_portval = pd.DataFrame(df_values.sum(axis=1), columns=['Portfolio Value'])

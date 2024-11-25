@@ -1,6 +1,6 @@
 import datetime as dt
 import numpy as np
-import StrategyLearner as sl
+
 import ManualStrategy as ms
 import experiment1 as e1
 import experiment2 as e2
